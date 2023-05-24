@@ -23,12 +23,12 @@ CREATE TEMPORARY TABLE session_level_made_it AS
 			CASE WHEN wp.pageview_url = '/cart' THEN 1 ELSE 0 END AS cart_page,
             CASE WHEN wp.pageview_url = '/shipping' THEN 1 ELSE 0 END AS shipping_page,
             CASE WHEN wp.pageview_url = '/billing' THEN 1 ELSE 0 END AS billing_page,
-            CASE WHEN wp.pageview_url = '/thankyou' THEN 1 ELSE 0 END AS thankyou_page
+            CASE WHEN wp.pageview_url = '/thank-you-for-your-order' THEN 1 ELSE 0 END AS thankyou_page
 		FROM website_sessions ws
 		LEFT JOIN website_pageviews wp
 		ON ws.website_session_id = wp.website_session_id
 		WHERE wp.created_at BETWEEN '2012-08-05' AND '2012-09-05'
-		AND wp.pageview_url IN ('/lander-2', '/products','/the-original-mr-fuzzy', '/cart', '/shipping', '/billing', '/thankyou')
+		AND ws.utm_source='gsearch' AND ws.utm_campaign='nonbrand'
 		ORDER BY ws.website_session_id, wp.created_at)
     
 	SELECT 
@@ -66,7 +66,7 @@ SELECT
 		COUNT(DISTINCT CASE WHEN cart_made_it = 1 THEN website_session_id ELSE NULL END) /  COUNT(DISTINCT CASE WHEN mrfuzzy_made_it = 1 THEN website_session_id ELSE NULL END) AS mrfuzzy_clickthrough_rate,
 		COUNT(DISTINCT CASE WHEN shipping_made_it = 1 THEN website_session_id ELSE NULL END) /  COUNT(DISTINCT CASE WHEN cart_made_it = 1 THEN website_session_id ELSE NULL END) AS cart_clickthrough_rate,
         COUNT(DISTINCT CASE WHEN billing_made_it = 1 THEN website_session_id ELSE NULL END) /  COUNT(DISTINCT CASE WHEN shipping_made_it = 1 THEN website_session_id ELSE NULL END) AS shipping_clickthrough_rate,
-        COUNT(DISTINCT CASE WHEN thankyou_made_it = 1 THEN website_session_id ELSE NULL END) /  COUNT(DISTINCT CASE WHEN shipping_made_it = 1 THEN website_session_id ELSE NULL END) AS shipping_clickthrough_rate
+        COUNT(DISTINCT CASE WHEN thankyou_made_it = 1 THEN website_session_id ELSE NULL END) /  COUNT(DISTINCT CASE WHEN billing_made_it = 1 THEN website_session_id ELSE NULL END) AS billing_clickthrough_rate
         
 	FROM session_level_made_it;
     
