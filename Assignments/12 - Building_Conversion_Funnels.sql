@@ -43,7 +43,7 @@ CREATE TEMPORARY TABLE session_level_made_it AS
 		GROUP BY website_session_id
     ;
     
--- Task 1
+-- Task 1: Session Waterfall Analysis
     
 SELECT 
 	COUNT(DISTINCT website_session_id) AS sessions,
@@ -56,7 +56,7 @@ SELECT
     
     FROM session_level_made_it;
     
--- Task 2
+-- Task 2:  Calculation of clickthrough rates
 	
     SELECT
     
