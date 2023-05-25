@@ -83,7 +83,7 @@ SELECT
 	MONTHNAME(created_at) AS month,
 	utm_source,
     utm_campaign,
-    COUNT(website_session_id) AS total_sessions
+    COUNT(website_session_id) AS sessions
 FROM website_sessions
 WHERE DATE(created_at)  < '2012-11-27'
 GROUP BY utm_source, utm_campaign,month_num, month
@@ -92,8 +92,49 @@ ORDER BY month_num,utm_source;
 -- Task 5: I’d like to tell the story of our website performance improvements over the course of the first 8 months.
 -- Could you pull session to order conversion rates, by month ? 
 
+WITH sessions_with_order AS 
+	(SELECT website_session_id
+	FROM website_pageviews
+	WHERE pageview_url LIKE '/thank-you%')
+    
+SELECT  
+	MONTH(created_at) AS month_num, 
+	MONTHNAME(created_at) AS month,
+	COUNT(DISTINCT ws.website_session_id) AS sessions,
+    COUNT(DISTINCT swo.website_session_id) AS orders,
+    COUNT(DISTINCT swo.website_session_id) / COUNT(DISTINCT ws.website_session_id) AS conv_rate
+FROM website_sessions ws
+LEFT JOIN sessions_with_order swo
+ON ws. website_session_id = swo.website_session_id
+WHERE DATE(ws.created_at)  < '2012-11-27'
+GROUP BY month_num, month
+ORDER BY month_num;
+
 -- Task 6: For the gsearch lander test, please estimate the revenue that test earned us ( Hint: Look at the increase in CVR
 -- from the test (Jun19 - Jul 28), and use nonbrand sessions and revenue since then to calculate incremental value) 
+
+SELECT 
+		COUNT(DISTINCT ws.website_session_id) AS sessions, 
+        COUNT(DISTINCT o.website_session_id) AS orders,
+        COUNT(DISTINCT o.website_session_id)  / COUNT(DISTINCT ws.website_session_id) AS conv_rate,
+        SUM(price_usd) AS revenue
+FROM website_sessions ws
+LEFT JOIN orders o
+ON ws.website_session_id = o.website_session_id
+WHERE utm_source='gsearch' AND utm_campaign='nonbrand'
+AND DATE(ws.created_at) BETWEEN '2012-06-19' AND '2012-07-28';
+
+SELECT 
+		COUNT(DISTINCT ws.website_session_id) AS sessions, 
+        COUNT(DISTINCT o.website_session_id) AS orders,
+        COUNT(DISTINCT o.website_session_id)  / COUNT(DISTINCT ws.website_session_id) AS conv_rate,
+        SUM(price_usd) AS revenue
+FROM website_sessions ws
+LEFT JOIN orders o
+ON ws.website_session_id = o.website_session_id
+WHERE utm_source='gsearch' AND utm_campaign='nonbrand'
+AND DATE(ws.created_at) BETWEEN '2012-07-28' AND '2012-11-27'
+
 
 -- Task 7: For the landing page test you analyzed previously, it would be great to show a full conversion funnel from each
 -- of the two pages to orders . You can use the same time period you analyzed last time (Jun 19 - Jul 28).
@@ -103,7 +144,9 @@ ORDER BY month_num,utm_source;
 -- for the past month to understand monthly impact.
 
 
-WITH sessions_with_order AS 
-	(SELECT website_session_id 
-	FROM website_pageviews
-	WHERE pageview_url LIKE '/thank-you%')
+SELECT ws.website_session_id, o.website_session_id, items_purchased, price_usd
+FROM website_sessions ws
+LEFT JOIN orders o
+ON ws.website_session_id = o.website_session_id
+WHERE utm_source='gsearch' AND utm_campaign='nonbrand'
+AND DATE(ws.created_at) BETWEEN '2012-06-19' AND '2012-07-28'
