@@ -143,10 +143,3 @@ AND DATE(ws.created_at) BETWEEN '2012-07-28' AND '2012-11-27'
 -- (Sep 10 - Nov 10), in terms of revenue per billing page session , and then pull the number of billing page sessions
 -- for the past month to understand monthly impact.
 
-
-SELECT ws.website_session_id, o.website_session_id, items_purchased, price_usd
-FROM website_sessions ws
-LEFT JOIN orders o
-ON ws.website_session_id = o.website_session_id
-WHERE utm_source='gsearch' AND utm_campaign='nonbrand'
-AND DATE(ws.created_at) BETWEEN '2012-06-19' AND '2012-07-28'
