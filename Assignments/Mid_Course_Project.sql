@@ -48,11 +48,31 @@ AND utm_source='gsearch'
 GROUP BY month_num, month
 ORDER BY month_num;
 
-
-
 -- Task 3: While we’re on Gsearch, could you dive into nonbrand, and pull monthly sessions and orders split by device
 -- type? I want to flex our analytical muscles a little and show the board we really know our traffic sources.
 
+WITH sessions_with_order AS 
+	(SELECT website_session_id 
+	FROM website_pageviews
+	WHERE pageview_url LIKE '/thank-you%')
+
+SELECT   
+	MONTH(created_at) AS month_num, 
+	MONTHNAME(created_at) AS month,
+    COUNT(ws.website_session_id) AS total_sessions,
+	COUNT(CASE WHEN device_type='mobile' THEN ws.website_session_id ELSE NULL END) AS mobile_sessions,
+    COUNT(CASE WHEN device_type='mobile' THEN swo.website_session_id ELSE NULL END) AS mobile_orders,
+    COUNT(CASE WHEN device_type='mobile' THEN swo.website_session_id ELSE NULL END) / COUNT(CASE WHEN device_type='mobile' THEN ws.website_session_id ELSE NULL END) AS mobile_conv_rate,
+	COUNT(CASE WHEN device_type='desktop' THEN ws.website_session_id ELSE NULL END) AS desktop_sessions,
+    COUNT(CASE WHEN device_type='desktop' THEN swo.website_session_id ELSE NULL END) AS desktop_orders,
+    COUNT(CASE WHEN device_type='desktop' THEN swo.website_session_id ELSE NULL END) / COUNT(CASE WHEN device_type='desktop' THEN ws.website_session_id ELSE NULL END) AS desktop_conv_rate
+FROM website_sessions ws
+LEFT JOIN sessions_with_order swo
+ON ws. website_session_id = swo.website_session_id
+WHERE DATE(created_at)  < '2012-11-27'
+AND utm_source='gsearch' AND utm_campaign='nonbrand'
+GROUP BY month_num, month
+ORDER BY month_num;
 
 
 -- Task 4: I’m worried that one of our more pessimistic board members may be concerned about the large % of traffic from
