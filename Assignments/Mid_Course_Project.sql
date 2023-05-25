@@ -110,30 +110,66 @@ WHERE DATE(ws.created_at)  < '2012-11-27'
 GROUP BY month_num, month
 ORDER BY month_num;
 
--- Task 6: For the gsearch lander test, please estimate the revenue that test earned us ( Hint: Look at the increase in CVR
+-- Task 6: For the gsearch lander test, please estimate the revenue that test earned us (Hint: Look at the increase in CVR
 -- from the test (Jun19 - Jul 28), and use nonbrand sessions and revenue since then to calculate incremental value) 
 
-SELECT 
-		COUNT(DISTINCT ws.website_session_id) AS sessions, 
-        COUNT(DISTINCT o.website_session_id) AS orders,
-        COUNT(DISTINCT o.website_session_id)  / COUNT(DISTINCT ws.website_session_id) AS conv_rate,
-        SUM(price_usd) AS revenue
-FROM website_sessions ws
-LEFT JOIN orders o
-ON ws.website_session_id = o.website_session_id
-WHERE utm_source='gsearch' AND utm_campaign='nonbrand'
-AND DATE(ws.created_at) BETWEEN '2012-06-19' AND '2012-07-28';
+-- First we need to find the first website_pageview_id where '/lander-1' appears, which is '23504'
+SELECT MIN(website_pageview_id) 
+FROM website_pageviews
+WHERE pageview_url='/lander-1';
+
+-- Step 1: Create a table that contains the first website_pageview_id for relevant sessions
+
+CREATE TEMPORARY TABLE first_test_pageviews
 
 SELECT 
-		COUNT(DISTINCT ws.website_session_id) AS sessions, 
-        COUNT(DISTINCT o.website_session_id) AS orders,
-        COUNT(DISTINCT o.website_session_id)  / COUNT(DISTINCT ws.website_session_id) AS conv_rate,
-        SUM(price_usd) AS revenue
-FROM website_sessions ws
-LEFT JOIN orders o
-ON ws.website_session_id = o.website_session_id
-WHERE utm_source='gsearch' AND utm_campaign='nonbrand'
-AND DATE(ws.created_at) BETWEEN '2012-07-28' AND '2012-11-27'
+		wp.website_session_id, 
+		MIN(website_pageview_id) AS min_pageview_id
+FROM website_pageviews wp
+INNER JOIN website_sessions ws
+ON wp.website_session_id=ws.website_session_id 
+	AND utm_source='gsearch'
+	AND utm_campaign='nonbrand' 
+	AND DATE(ws.created_at) < '2012-07-28'
+    AND wp.website_pageview_id >= 23504
+GROUP BY website_session_id;
+
+-- Step 2:  Bring in the landing page info for each session, but restrict to '\home' only.
+
+CREATE TEMPORARY TABLE sessions_with_landing_pages
+
+SELECT 
+		ftpv.website_session_id, 
+        wpv.pageview_url AS landing_page
+FROM first_test_pageviews ftpv
+LEFT JOIN website_pageviews wpv
+ON wpv.website_pageview_id = ftpv.min_pageview_id
+WHERE wpv.pageview_url IN ('/home', '/lander-1');
+
+-- Step 3: We create a table to include a count of pageviews per sesson.
+-- First we, show all of the sessions and then we will limit to bounced sessions
+-- and create a table.
+
+CREATE TEMPORARY TABLE bounced_sessions_only
+
+SELECT  swlp.website_session_id, swlp.landing_page,
+COUNT(wpv.website_pageview_id) AS cnt_page_views
+FROM sessions_with_landing_pages swlp 
+LEFT JOIN website_pageviews wpv
+ON wpv.website_session_id = swlp.website_session_id
+GROUP BY swlp.website_session_id, swlp.landing_page
+HAVING cnt_page_views = 1;
+
+-- Step 4:  Run the previous query to get a count of total sessions by landing page.
+--  Then calculate a bounce rate for each landing page.
+
+SELECT swlp.landing_page,  COUNT(DISTINCT swlp.website_session_id) AS total_sessions,
+COUNT(DISTINCT bso.website_session_id) AS bounced_sessions,
+COUNT(DISTINCT bso.website_session_id) / COUNT(DISTINCT swlp.website_session_id) AS bounce_rate
+FROM sessions_with_landing_pages swlp
+LEFT JOIN bounced_sessions_only bso
+ON swlp.website_session_id = bso.website_session_id
+GROUP BY swlp.landing_page;
 
 
 -- Task 7: For the landing page test you analyzed previously, it would be great to show a full conversion funnel from each
