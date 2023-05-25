@@ -78,6 +78,17 @@ ORDER BY month_num;
 -- Task 4: I’m worried that one of our more pessimistic board members may be concerned about the large % of traffic from
 -- Gsearch. Can you pull monthly trends for Gsearch, alongside monthly trends for each of our other channels?
 
+SELECT   
+	MONTH(created_at) AS month_num, 
+	MONTHNAME(created_at) AS month,
+	utm_source,
+    utm_campaign,
+    COUNT(website_session_id) AS total_sessions
+FROM website_sessions
+WHERE DATE(created_at)  < '2012-11-27'
+GROUP BY utm_source, utm_campaign,month_num, month
+ORDER BY month_num,utm_source;
+
 -- Task 5: I’d like to tell the story of our website performance improvements over the course of the first 8 months.
 -- Could you pull session to order conversion rates, by month ? 
 
