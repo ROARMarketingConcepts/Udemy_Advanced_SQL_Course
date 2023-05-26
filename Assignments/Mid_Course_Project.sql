@@ -134,7 +134,7 @@ ON wp.website_session_id=ws.website_session_id
     AND wp.website_pageview_id >= 23504
 GROUP BY website_session_id;
 
--- Step 2:  Bring in the landing page info for each session, but restrict to '\home' only.
+-- Step 2:  Bring in the landing page info for each session, but restrict to '\home' and '\lander-1' only.
 
 CREATE TEMPORARY TABLE sessions_with_landing_pages
 
@@ -146,31 +146,52 @@ LEFT JOIN website_pageviews wpv
 ON wpv.website_pageview_id = ftpv.min_pageview_id
 WHERE wpv.pageview_url IN ('/home', '/lander-1');
 
--- Step 3: We create a table to include a count of pageviews per sesson.
--- First we, show all of the sessions and then we will limit to bounced sessions
--- and create a table.
+-- Step 3: We create a table to bring in the order information.
 
-CREATE TEMPORARY TABLE bounced_sessions_only
+CREATE TEMPORARY TABLE sessions_with_orders
 
-SELECT  swlp.website_session_id, swlp.landing_page,
-COUNT(wpv.website_pageview_id) AS cnt_page_views
+SELECT  swlp.website_session_id, swlp.landing_page, order_id
 FROM sessions_with_landing_pages swlp 
-LEFT JOIN website_pageviews wpv
-ON wpv.website_session_id = swlp.website_session_id
-GROUP BY swlp.website_session_id, swlp.landing_page
-HAVING cnt_page_views = 1;
+LEFT JOIN orders o
+ON swlp.website_session_id = o.website_session_id;
 
 -- Step 4:  Run the previous query to get a count of total sessions by landing page.
 --  Then calculate a bounce rate for each landing page.
 
-SELECT swlp.landing_page,  COUNT(DISTINCT swlp.website_session_id) AS total_sessions,
-COUNT(DISTINCT bso.website_session_id) AS bounced_sessions,
-COUNT(DISTINCT bso.website_session_id) / COUNT(DISTINCT swlp.website_session_id) AS bounce_rate
-FROM sessions_with_landing_pages swlp
-LEFT JOIN bounced_sessions_only bso
-ON swlp.website_session_id = bso.website_session_id
-GROUP BY swlp.landing_page;
+SELECT 
+		landing_page,  
+		COUNT(DISTINCT website_session_id) AS total_sessions,
+		COUNT(DISTINCT order_id) AS orders,
+COUNT(DISTINCT order_id) / COUNT(DISTINCT website_session_id) AS conv_rate
+FROM sessions_with_orders
+GROUP BY landing_page;
 
+-- .0319 for /home, vs .0406 for /lander-1 
+-- .0087 additional orders per session
+
+-- Now, we need to find the most recent pageview for gsearch nonbrand where the traffic was sent to /home
+-- website_session_id = 17145
+
+SELECT 
+	MAX(ws.website_session_id) AS most_recent_pageview 
+FROM website_sessions ws
+	LEFT JOIN website_pageviews wp
+		ON wp.website_session_id = ws.website_session_id
+WHERE utm_source = 'gsearch'
+	AND utm_campaign = 'nonbrand'
+    AND pageview_url = '/home'
+    AND DATE(ws.created_at ) < '2012-11-27';
+
+SELECT 
+	COUNT(website_session_id) AS sessions_since_test
+FROM website_sessions
+WHERE created_at < '2012-11-27'
+	AND website_session_id > 17145 -- last /home session
+	AND utm_source = 'gsearch'
+	AND utm_campaign = 'nonbrand'
+    
+-- ( 22972 website sessions since the test) * (.0087 incremental conversion) = 202 incremental orders since 7/29
+-- roughly 4 months, so roughly 50 extra orders per month. Not bad!
 
 -- Task 7: For the landing page test you analyzed previously, it would be great to show a full conversion funnel from each
 -- of the two pages to orders . You can use the same time period you analyzed last time (Jun 19 - Jul 28).
