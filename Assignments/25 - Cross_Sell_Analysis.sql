@@ -14,7 +14,7 @@ FROM website_pageviews
 WHERE DATE(created_at) BETWEEN '2013-08-25' AND '2013-10-25' 
 AND pageview_url = '/cart';
 
--- Step 2:  Find the next website_pageview_id that occurs AFTER the '/products' pageview.
+-- Step 2:  Find the next website_pageview_id that occurs AFTER the '/cart' pageview.
 
 CREATE TEMPORARY TABLE  cart_sessions_with_next_pageview
 
