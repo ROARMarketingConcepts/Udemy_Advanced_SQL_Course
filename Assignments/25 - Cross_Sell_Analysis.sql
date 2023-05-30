@@ -25,7 +25,7 @@ SELECT
 FROM cart_sessions cs
 LEFT JOIN website_pageviews wp
 ON wp.website_session_id = cs.website_session_id
-AND wp.website_pageview_id > cs.website_pageview_id  --  look for pageviews AFTER the '/products' pageview
+AND wp.website_pageview_id > cs.website_pageview_id  --  look for pageviews AFTER the '/cart' pageview
 GROUP BY 1,2;
 
 -- Step 3:  Find the order_id associated with any cart clickthrough.
