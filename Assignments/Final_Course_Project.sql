@@ -132,10 +132,50 @@ SELECT
     FROM sessions_with_next_pageview swnp
     LEFT JOIN orders o
     ON swnp.website_session_id = o.website_session_id
-    GROUP BY YEAR(swnp.created_at), MONTH(swnp.created_at)
+    GROUP BY YEAR(swnp.created_at), MONTH(swnp.created_at);
 
 -- 7.  We made our 4th product available as a primary product on December 05, 2014 (it was previously only a cross sell
 -- 		item). Could you please pull sales data since then, and show how well each product cross sells from one another?
+
+-- Step 1: Get primary product information
+
+CREATE TEMPORARY TABLE primary_products
+
+SELECT 
+	order_id,
+    primary_product_id,
+    created_at
+FROM orders
+WHERE created_at > '2014-12-05';
+
+-- Step 2:  Get cross-sell product information
+
+CREATE TEMPORARY TABLE cross_sell_product_info
+
+SELECT 
+	pp.*,
+    oi.product_id AS cross_sell_product_id
+FROM primary_products pp
+LEFT JOIN order_items oi
+ON oi.order_id = pp.order_id
+AND oi.is_primary_item=0;
+
+-- Step 3: Aggregate the data to generate the metrics requested.
+
+SELECT 
+	primary_product_id,
+	COUNT(DISTINCT order_id) AS total_orders,
+    COUNT(DISTINCT CASE WHEN cross_sell_product_id = 1 THEN order_id ELSE NULL END) AS xsold_p1,
+	COUNT(DISTINCT CASE WHEN cross_sell_product_id = 2 THEN order_id ELSE NULL END) AS xsold_p2,
+	COUNT(DISTINCT CASE WHEN cross_sell_product_id = 3 THEN order_id ELSE NULL END) AS xsold_p3,
+	COUNT(DISTINCT CASE WHEN cross_sell_product_id = 4 THEN order_id ELSE NULL END) AS xsold_p4,
+	COUNT(DISTINCT CASE WHEN cross_sell_product_id = 1 THEN order_id ELSE NULL END) / COUNT(DISTINCT order_id) AS p1_xsell_rt,
+	COUNT(DISTINCT CASE WHEN cross_sell_product_id = 2 THEN order_id ELSE NULL END) / COUNT(DISTINCT order_id) AS p2_xsell_rt,
+	COUNT(DISTINCT CASE WHEN cross_sell_product_id = 3 THEN order_id ELSE NULL END) / COUNT(DISTINCT order_id) AS p3_xsell_rt,
+	COUNT(DISTINCT CASE WHEN cross_sell_product_id = 4 THEN order_id ELSE NULL END) / COUNT(DISTINCT order_id) AS p4_xsell_rt
+    
+    FROM cross_sell_product_info
+    GROUP BY 1;
 
 -- 8. 	In addition to telling investors about what we’ve already achieved, let’s show them that we still have plenty of
 -- 		gas in the tank. Based on all the analysis you’ve done, could you share some recommendations and
