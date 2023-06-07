@@ -56,13 +56,29 @@ orders_view;
 
 CREATE VIEW V_ORDER_YEAR_MONTH AS
 
-SELECT TO_CHAR(order_datetime, 'YYYY-MM') AS year_month,
-SUM(revenue) AS year_month_total
+SELECT 
+    TO_CHAR(order_datetime, 'YYYY-MM') AS year_month,
+    SUM(revenue) AS year_month_total
 FROM orders_view
 GROUP BY TO_CHAR(order_datetime,'YYYY-MM');
 
 -- On the above view use Analytical Functions to create a running total column 
 -- using the YEAR_MONTH_TOTAL field ordered  by the YEAR_MONTH field in ascending order
+
+
+SELECT 
+    year_month,
+    year_month_total,
+    SUM(year_month_total) OVER (ORDER BY year_month) AS running_total
+FROM V_ORDER_YEAR_MONTH
+
+-- OR
+
+SELECT
+YEAR_MONTH,
+YEAR_MONTH_TOTAL,
+SUM(YEAR_MONTH_TOTAL) OVER(ORDER BY YEAR_MONTH ASC RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
+FROM V_ORDER_YEAR_MONTH;
 
 
 
