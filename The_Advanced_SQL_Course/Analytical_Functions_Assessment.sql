@@ -46,7 +46,9 @@ order_id,
 TO_CHAR(order_datetime,'MM-YY') as month_year,
 TO_NUMBER(TO_CHAR(order_datetime,'YYMM')) AS month_year_code,
 revenue,
-AVG(revnue) OVER(ORDER BY TO_NUMBER(TO_CHAR(order_datetime,'YYMM')) RANGE 2 PRECEDING) AS avg_3_months,
-revenue - AVG(revenue) OVER(ORDER BY TO_NUMBER(TO_CHAR(order_datetime,'YYMM')) RANGE 2 PRECEDING)  AS VAR
+ROUND(AVG(revenue) OVER(ORDER BY TO_NUMBER(TO_CHAR(order_datetime,'YYMM')) RANGE 2 PRECEDING),2) AS avg_3_months,
+ROUND(revenue - AVG(revenue) OVER(ORDER BY TO_NUMBER(TO_CHAR(order_datetime,'YYMM')) RANGE 2 PRECEDING),2)  AS VAR
 FROM
-orders_YYMM
+orders_view;
+
+
