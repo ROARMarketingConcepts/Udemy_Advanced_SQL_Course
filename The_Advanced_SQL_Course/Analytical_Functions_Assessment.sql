@@ -34,3 +34,19 @@ SELECT
     MAX(revenue) OVER (PARTITION BY TO_CHAR(ORDER_DATETIME,'MM-YY') ORDER BY TO_CHAR(order_datetime,'MM-YY')) AS max_revenue,
     MAX(revenue) OVER (PARTITION BY TO_CHAR(ORDER_DATETIME,'MM-YY') ORDER BY TO_CHAR(order_datetime,'MM-YY')) - revenue AS difference_from_max
 FROM orders_view
+
+
+-- Using Analytical Functions find the order total for each order_id and subtract the 3 month rolling average 
+-- order total (the average of the current month and the previous 2 months of orders). Your solution should only 
+-- calculate the rolling average for months that are in the same year.
+
+
+SELECT
+order_id,
+TO_CHAR(order_datetime,'MM-YY') as month_year,
+TO_NUMBER(TO_CHAR(order_datetime,'YYMM')) AS month_year_code,
+revenue,
+AVG(revnue) OVER(ORDER BY TO_NUMBER(TO_CHAR(order_datetime,'YYMM')) RANGE 2 PRECEDING) AS avg_3_months,
+revenue - AVG(revenue) OVER(ORDER BY TO_NUMBER(TO_CHAR(order_datetime,'YYMM')) RANGE 2 PRECEDING)  AS VAR
+FROM
+orders_YYMM
