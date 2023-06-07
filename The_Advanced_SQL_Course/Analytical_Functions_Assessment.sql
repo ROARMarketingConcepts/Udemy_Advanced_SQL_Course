@@ -51,4 +51,18 @@ ROUND(revenue - AVG(revenue) OVER(ORDER BY TO_NUMBER(TO_CHAR(order_datetime,'YYM
 FROM
 orders_view;
 
+--  BONUS Problem
+
+
+CREATE VIEW V_ORDER_YEAR_MONTH AS
+
+SELECT TO_CHAR(order_datetime, 'YYYY-MM') AS year_month,
+SUM(revenue) AS year_month_total
+FROM orders_view
+GROUP BY TO_CHAR(order_datetime,'YYYY-MM');
+
+-- On the above view use Analytical Functions to create a running total column 
+-- using the YEAR_MONTH_TOTAL field ordered  by the YEAR_MONTH field in ascending order
+
+
 
